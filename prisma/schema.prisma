@@ -1,0 +1,217 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  waitlistEntries WaitlistEntry[]
+  contactForms    ContactForm[]
+  newsletters     Newsletter[]
+
+  @@map("users")
+}
+
+model WaitlistEntry {
+  id          String      @id @default(cuid())
+  email       String      @unique
+  name        String?
+  gameTypes   String[]    // Array of game types interested in
+  experience  Experience  @default(BEGINNER)
+  status      Status      @default(PENDING)
+  source      String?     // How they heard about us
+  priority    Int         @default(0) // For prioritizing alpha access
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@map("waitlist")
+}
+
+model ContactForm {
+  id          String      @id @default(cuid())
+  name        String
+  email       String
+  subject     String
+  message     String
+  type        ContactType @default(GENERAL)
+  status      Status      @default(PENDING)
+  response    String?     // Admin response
+  respondedAt DateTime?   // When admin responded
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@map("contact_forms")
+}
+
+model Newsletter {
+  id          String  @id @default(cuid())
+  email       String  @unique
+  name        String?
+  isActive    Boolean @default(true)
+  preferences Json?   // JSON object for email preferences
+  source      String? // Where they subscribed from
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@map("newsletters")
+}
+
+model InvestmentInquiry {
+  id            String @id @default(cuid())
+  name          String
+  email         String
+  company       String?
+  position      String?
+  investmentSize String? // e.g., "$100K-$500K"
+  message       String
+  status        Status @default(PENDING)
+  fundType      String? // e.g., "VC", "Angel", "Strategic"
+  timeline      String? // Investment timeline
+  response      String? // Admin response
+  respondedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("investment_inquiries")
+}
+
+model AlphaApplication {
+  id           String @id @default(cuid())
+  email        String @unique
+  name         String
+  experience   Experience @default(BEGINNER)
+  gameTypes    String[] // Types of games they want to create
+  platforms    String[] // Preferred platforms
+  background   String? // Professional background
+  portfolio    String? // Link to existing work
+  motivation   String // Why they want to join alpha
+  status       ApplicationStatus @default(PENDING)
+  score        Int @default(0) // Evaluation score
+  feedback     String? // Evaluation feedback
+  approvedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("alpha_applications")
+}
+
+model PartnershipInquiry {
+  id           String @id @default(cuid())
+  companyName  String
+  contactName  String
+  email        String
+  website      String?
+  partnerType  PartnershipType
+  description  String
+  proposedValue String? // What they bring to the partnership
+  status       Status @default(PENDING)
+  response     String?
+  respondedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("partnership_inquiries")
+}
+
+model PressInquiry {
+  id           String @id @default(cuid())
+  journalistName String
+  email        String
+  publication  String
+  deadline     DateTime?
+  topic        String
+  questions    String
+  status       Status @default(PENDING)
+  response     String?
+  respondedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("press_inquiries")
+}
+
+model Analytics {
+  id        String   @id @default(cuid())
+  event     String   // Event name (page_view, form_submit, etc.)
+  page      String?  // Page URL
+  data      Json?    // Additional event data
+  userAgent String?
+  ipAddress String?
+  timestamp DateTime @default(now())
+
+  @@map("analytics")
+}
+
+// Enums
+enum Role {
+  USER
+  ADMIN
+  FOUNDER
+}
+
+enum Experience {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  PROFESSIONAL
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+  RESPONDED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  APPROVED
+  REJECTED
+  WAITLISTED
+}
+
+enum ContactType {
+  GENERAL
+  TECHNICAL
+  PARTNERSHIP
+  INVESTMENT
+  PRESS
+  SUPPORT
+}
+
+enum PartnershipType {
+  TECHNOLOGY
+  STRATEGIC
+  DISTRIBUTION
+  CONTENT
+  ENTERPRISE
+  ACADEMIC
+}
